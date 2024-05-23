@@ -7,6 +7,8 @@ TaskManager is a powerful and intuitive tool designed to help you stay organized
 
 ## Preview
 
+https://github.com/negi153/TaskManager/assets/27079205/f3fbc3e1-06f3-4c53-8518-ab936c1655b8
+
 ## Features
 
 ### Task Management
