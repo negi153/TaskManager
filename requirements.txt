@@ -1,0 +1,5 @@
+pyqt5
+PyQt5Designer
+pyuic5-tool
+PyInstaller
+pandas
