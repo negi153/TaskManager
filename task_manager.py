@@ -19,7 +19,7 @@ class TaskManager(QMainWindow):
         self.all_task_details = {'data':[]} # store data from database file
         self.data_file_path = 'task_details.csv'
 
-        self.column_names = ['UNIQUE TASK NUMBER', 'TASK NAME', 'DESCRIPTION', 'CREATION DATE', 'STARTED DATE', 'COMPLETION DATE', 'STATUS', 'DAYS LEFT']
+        self.column_names = ['TASK NUMBER', 'TASK NAME', 'DESCRIPTION', 'CREATION DATE', 'STARTED DATE', 'TARGET DATE', 'STATUS', 'DAYS LEFT']
         
         self.status_list = ['All', 'Not Started', 'In Progress', 'Pending', 'Completed', 'Blocked']
         self.status_color_mapping = {
@@ -29,6 +29,10 @@ class TaskManager(QMainWindow):
                                 'Completed' : {'color' : QtGui.QColor(0,255,0), 'index' : 3},
                                 'Blocked' : {'color' : QtGui.QColor(196,118,67), 'index' : 4}
                             }
+
+        # get current year,day,month
+        current_timestamp = datetime.now()
+        self.year, self.month, self.day = current_timestamp.year, current_timestamp.month, current_timestamp.day
 
         # create data file if not present
         if not os.path.isfile(self.data_file_path): #create file if not exist
@@ -76,24 +80,24 @@ class TaskManager(QMainWindow):
             if len(self.all_task_details) == 0:
                 max_task_num = 0
             else:
-                max_task_num = int(self.all_task_details['UNIQUE TASK NUMBER'].max())
+                max_task_num = int(self.all_task_details['TASK NUMBER'].max())
 
             # clear the content
             self.taskNumLabel.setText(str(max_task_num+1))
             self.taskNameEditText.setText('')
             self.descriptionEditText.setText('')
-            self.targetDate.setDate(QDate(2000, 1, 1))
+            self.targetDate.setDate(QDate(self.year,self.month,self.day))
 
         elif(current_tab_index == 2): # update task tab
             self.taskNum2ComboBox.clear()
-            task_num_str = list(map(str,list(self.all_task_details['UNIQUE TASK NUMBER'])))
+            task_num_str = list(map(str,list(self.all_task_details['TASK NUMBER'])))
             self.taskNum2ComboBox.addItems(task_num_str)
 
             self.taskStatus2ComboBox.clear()
             self.taskStatus2ComboBox.addItems(self.status_list[1:])
 
-            self.startDate2DateField.setDate(QDate(2000, 1, 1))
-            self.targetDate2DateField.setDate(QDate(2000, 1, 1))
+            self.startDate2DateField.setDate(QDate(self.year,self.month,self.day))
+            self.targetDate2DateField.setDate(QDate(self.year,self.month,self.day))
 
 
     def show_msg(self,msg):
@@ -129,7 +133,7 @@ class TaskManager(QMainWindow):
 
              # evaluate days left 
             for i in range(len(self.all_task_details)):
-                self.all_task_details.at[i,'DAYS LEFT'] = int((datetime.strptime(self.all_task_details['COMPLETION DATE'][i],'%d-%m-%Y') - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days)
+                self.all_task_details.at[i,'DAYS LEFT'] = int((datetime.strptime(self.all_task_details['TARGET DATE'][i],'%d-%m-%Y') - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days)
 
             # filter data if status is not "All" 
             if current_status != 'All':
@@ -181,7 +185,7 @@ class TaskManager(QMainWindow):
             self.taskNumLabel.setText(str(int(self.taskNumLabel.text())+1))
             self.taskNameEditText.setText('')
             self.descriptionEditText.setText('')
-            self.targetDate.setDate(QDate(2000, 1, 1))
+            self.targetDate.setDate(QDate(self.year,self.month,self.day))
 
         except Exception as e:
             self.show_msg(f'Exception in method "create_task" - {e}')
@@ -201,9 +205,9 @@ class TaskManager(QMainWindow):
             updated_task_status = self.taskStatus2ComboBox.currentText()
 
             # find the index in dataframe
-            row_index =  self.all_task_details[self.all_task_details['UNIQUE TASK NUMBER']==int(selected_unique_task_num)].index[0]
+            row_index =  self.all_task_details[self.all_task_details['TASK NUMBER']==int(selected_unique_task_num)].index[0]
 
-            self.all_task_details.loc[row_index,['TASK NAME', 'DESCRIPTION', 'STARTED DATE', 'COMPLETION DATE', 'STATUS']] = [updated_task_name, updated_description, updated_start_date, updated_target_date, updated_task_status]
+            self.all_task_details.loc[row_index,['TASK NAME', 'DESCRIPTION', 'STARTED DATE', 'TARGET DATE', 'STATUS']] = [updated_task_name, updated_description, updated_start_date, updated_target_date, updated_task_status]
 
             # update task
             self.all_task_details.to_csv(self.data_file_path, index=False)
@@ -213,8 +217,8 @@ class TaskManager(QMainWindow):
             # set values
             self.taskName2EditText.setText('')
             self.description2EditText.setText('')
-            self.startDate2DateField.setDate(QDate(2000, 1, 1))
-            self.targetDate2DateField.setDate(QDate(2000, 1, 1))
+            self.startDate2DateField.setDate(QDate(self.year,self.month,self.day))
+            self.targetDate2DateField.setDate(QDate(self.year,self.month,self.day))
 
         except Exception as e:
             self.show_msg(str(e))
@@ -226,7 +230,7 @@ class TaskManager(QMainWindow):
         
         selected_unique_task_num = self.taskNum2ComboBox.currentText()
 
-        for row in self.all_task_details[self.all_task_details['UNIQUE TASK NUMBER'] == int(selected_unique_task_num)].iterrows():
+        for row in self.all_task_details[self.all_task_details['TASK NUMBER'] == int(selected_unique_task_num)].iterrows():
             data = dict(row[1])
 
         # set values
@@ -235,14 +239,14 @@ class TaskManager(QMainWindow):
         
         date = []
         if not data['STARTED DATE']:
-            self.startDate2DateField.setDate(QDate(2000,1,1))
+            self.startDate2DateField.setDate(QDate(self.year,self.month,self.day))
         else:
             date = list(map(int,data['STARTED DATE'].split('-')))
             date.reverse()
             self.startDate2DateField.setDate(QDate(date[0],date[1],date[2]))
             
         date1 = []
-        date1 = list(map(int,data['COMPLETION DATE'].split('-')))
+        date1 = list(map(int,data['TARGET DATE'].split('-')))
         date1.reverse()
         self.targetDate2DateField.setDate(QDate(date1[0],date1[1],date1[2]))
 
